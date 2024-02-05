@@ -1,0 +1,14 @@
+/home/giovanni/anaconda3/lib/python3.10/site-packages/excursion_set-0.0.1-py3.10-linux-x86_64.egg/excursion_set_functions.py
+/home/giovanni/anaconda3/lib/python3.10/site-packages/excursion_set-0.0.1-py3.10-linux-x86_64.egg/gsl.cpython-310-x86_64-linux-gnu.so
+/home/giovanni/anaconda3/lib/python3.10/site-packages/excursion_set-0.0.1-py3.10-linux-x86_64.egg/excursion_set_functions.cpython-310-x86_64-linux-gnu.so
+/home/giovanni/anaconda3/lib/python3.10/site-packages/excursion_set-0.0.1-py3.10-linux-x86_64.egg/PYTHON_PROVVISORIO/__init__.py
+/home/giovanni/anaconda3/lib/python3.10/site-packages/excursion_set-0.0.1-py3.10-linux-x86_64.egg/PYTHON_PROVVISORIO/excursion_set_python.py
+/home/giovanni/anaconda3/lib/python3.10/site-packages/excursion_set-0.0.1-py3.10-linux-x86_64.egg/PYTHON_PROVVISORIO/__pycache__/__init__.cpython-310.pyc
+/home/giovanni/anaconda3/lib/python3.10/site-packages/excursion_set-0.0.1-py3.10-linux-x86_64.egg/PYTHON_PROVVISORIO/__pycache__/excursion_set_python.cpython-310.pyc
+/home/giovanni/anaconda3/lib/python3.10/site-packages/excursion_set-0.0.1-py3.10-linux-x86_64.egg/EGG-INFO/native_libs.txt
+/home/giovanni/anaconda3/lib/python3.10/site-packages/excursion_set-0.0.1-py3.10-linux-x86_64.egg/EGG-INFO/dependency_links.txt
+/home/giovanni/anaconda3/lib/python3.10/site-packages/excursion_set-0.0.1-py3.10-linux-x86_64.egg/EGG-INFO/top_level.txt
+/home/giovanni/anaconda3/lib/python3.10/site-packages/excursion_set-0.0.1-py3.10-linux-x86_64.egg/EGG-INFO/not-zip-safe
+/home/giovanni/anaconda3/lib/python3.10/site-packages/excursion_set-0.0.1-py3.10-linux-x86_64.egg/EGG-INFO/SOURCES.txt
+/home/giovanni/anaconda3/lib/python3.10/site-packages/excursion_set-0.0.1-py3.10-linux-x86_64.egg/EGG-INFO/PKG-INFO
+/home/giovanni/anaconda3/lib/python3.10/site-packages/excursion_set-0.0.1-py3.10-linux-x86_64.egg/__pycache__/excursion_set_functions.cpython-310.pyc
