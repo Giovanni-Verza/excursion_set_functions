@@ -16,6 +16,26 @@ namespace py = pybind11;
 
 
 
+
+py::array_t<double> Lagrangian_tophat_mass_inR(vector<double> &R,double Omega_M) {
+
+
+    int len_R = R.size();
+    py::array_t<double> OUT = py::array_t<double>(len_R);
+    py::buffer_info buf_OUT = OUT.request();
+    double *ptr_OUT = (double *) buf_OUT.ptr;
+
+    for (int i=0;i<len_R;i++) {
+        ptr_OUT[i] = 3.086e13/(2.*6.674*1.989) * Omega_M * R[i] * R[i] * R[i];
+    }
+
+    return OUT;
+}
+
+
+
+
+
 py::array_t<double> f_double_barrier_lnsigma(vector<double> sigma, double delta_v, double delta_c) {
     int len_arr = sigma.size();
     py::array_t<double> np_arr = py::array_t<double>(len_arr);
@@ -147,13 +167,41 @@ py::array_t<double> f_Tinker_5params(vector<double> sigma, double norm, double p
     return np_arr;
 }
 
+
+
+
+py::array_t<double> f_S_MB_approx(vector<double> &s,vector<double> &W,vector<double> &B,vector<double> &dB_ds) {
+
+    int len_s = s.size();
+    py::array_t<double> OUT = py::array_t<double>(len_s);
+    py::buffer_info buf_OUT = OUT.request();
+    double *ptr_OUT = (double *) buf_OUT.ptr;
+
+    double LDD, D_BP, AB2S, I2a_S, I2b_2_S_noExp;
+    
+    for (int i=0; i<len_s; i++) {
+        LDD = s[i] * W[i] - 0.25;
+        D_BP = 0.5 * B[i] / s[i] - dB_ds[i];
+        AB2S = 0.5 * s[i] / LDD * D_BP * D_BP;
+        
+        I2a_S = sqrt(LDD) / (4*M_PI*s[i]) * exp(-0.5 / LDD * (s[i] * dB_ds[i]*dB_ds[i] + W[i]*B[i]*B[i] - B[i]*dB_ds[i]));
+        I2b_2_S_noExp = 0.5 * D_BP * (erf(sqrt(AB2S))+1) / sqrt(2.*M_PI*s[i]);
+        ptr_OUT[i] = I2a_S + (I2b_2_S_noExp + sqrt(LDD)/(4*M_PI*s[i]) * exp(-AB2S)) * exp(-0.5*B[i]*B[i] / s[i]);
+    }
+        
+    return OUT;
+}
+
+
 void init_ex_set_analytical(py::module_ &m) {
+    m.def("Lagrangian_tophat_mass_inR", &Lagrangian_tophat_mass_inR);
     m.def("f_double_barrier_lnsigma", &f_double_barrier_lnsigma);
     m.def("f_ST_nu", &f_ST_nu);
     m.def("f_ST_nu_unnorm", &f_ST_nu_unnorm);
     m.def("f_Tinker", &f_Tinker);
     m.def("f_Tinker_normalized", &f_Tinker_normalized);
     m.def("f_Tinker_5params", &f_Tinker_5params);
+    m.def("f_S_MB_approx", &f_S_MB_approx);
 }
 
 
