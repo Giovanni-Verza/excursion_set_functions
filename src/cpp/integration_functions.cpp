@@ -20,8 +20,33 @@ namespace py = pybind11;
 
 
 
+vector<double> linspace(double a, double b, int n) {
+    vector<double> out(n);
+    double delta = (b - a) / (n - 1);
+    for (int i=0; i < n - 1; i++) {
+        out[i] = a + delta * i;
+    }
+    out[n-1] = b;
+    return out;
+}
 
-void tridiagonal_elements_for_k_not_a_knot_tmp(vector<double> x, vector<double> y, double abcd[][4]) {
+vector<double> logspace(double a, double b, int n) {
+    vector<double> out(n);
+    double log_a = log2(a);
+    double log_b = log2(b);
+    double delta = (log_b - log_a) / (n - 1);
+    out[0] = a;
+
+    for (int i=1; i < n - 1; i++) {
+        out[i] = pow(2.,log_a + delta * i);
+    }
+    out[n-1] = b;
+
+    return out;
+}
+
+
+void tridiagonal_elements_for_k_not_a_knot_tmp(vector<double> &x, vector<double> &y, double abcd[][4]) {
     //a = Lower Diag, b = Main Diag, c = Upper Diag, d = solution vector
     //n = len(x)
     //a = np.zeros(n-1)
@@ -97,7 +122,7 @@ void solve_tridiagonal_system_tmp(double abcd[][4], double k[],int len_x) {
     //delete[] k;
 }
 
-void coeffs_from_k_tmp(vector<double> x, vector<double> y, double k[], double coeffs[][4],int len_x) {
+void coeffs_from_k_tmp(vector<double> &x, vector<double> &y, double k[], double coeffs[][4],int len_x) {
     //double *c1 = new double[len_x-1];
     //double *c2 = new double[len_x-1];
     //for (int i=0; i<len_x-1, i++) {
@@ -116,18 +141,33 @@ void coeffs_from_k_tmp(vector<double> x, vector<double> y, double k[], double co
     }
 }
 
-template<typename T>
-vector<int> argsort(const vector<T>& v) {
-    vector<int> result(v.size());
-    iota(begin(result), end(result), 0);
-    sort(begin(result), end(result),
-            [&v](const auto & lhs, const auto & rhs)
-            {
-                return v[lhs] < v[rhs];
-            }
-    );
-    return result;
-}
+vector<double> get_values_from_coeffs(vector<double> &x_eval, vector<double> &x, double coeffs[][4]) {
+    int len_out = x_eval.size();
+    int len_x = x.size();
+    vector<double> y_out(len_out);
+    double delta_x, t;
+    int i_out=0;
+    int len_x_mn2 = len_x - 2;
+
+    //i_out = 0;
+    //for (int i=0; i<len_out; i++) {
+    for(int i=0; i < len_out; i++)  {
+        while ((x_eval[i] >= x[i_out+1]  && (i_out < len_x_mn2))) {
+            i_out += 1;
+        }
+        
+        delta_x = x[i_out+1] - x[i_out];
+        t = (x_eval[i] - x[i_out]) / delta_x;
+        y_out[i] = coeffs[i_out][0] + 
+                    coeffs[i_out][1] * t + 
+                    coeffs[i_out][2] * t * t + 
+                    coeffs[i_out][3] * t * t * t;
+                    
+    }
+
+    //return y_out;
+    return y_out;
+} 
 
 
 vector<double> top_hat_rk_HR(double r, vector<double> &k) {
@@ -550,6 +590,56 @@ py::array_t<double> C_ij_TopHat(vector<double> &Pk, vector<double> &k, vector<do
 
 
 
+
+py::array_t<double> sigma2_2_TopHat_numdiff(
+        vector<double> &Pk, vector<double> &k, vector<double> &R, double n, int OmaxSmallK,double dRperc) {
+
+    int len_x = Pk.size();
+    int len_R = R.size();
+
+    double (*coeffs)[4] = new double[len_x-1][4];
+    double (*abcd)[4] = new double[len_x][4];
+    double *xx = new double[len_x];
+    
+
+    tridiagonal_elements_for_k_not_a_knot_tmp(k, Pk, abcd);
+    solve_tridiagonal_system_tmp(abcd, xx, len_x);
+    coeffs_from_k_tmp(k, Pk, xx, coeffs, len_x);
+
+    explicit_from_implicit_coeffs(coeffs, k);
+
+    delete[] xx;
+    delete[] abcd;
+
+
+    py::array_t<double> OUT = py::array_t<double>(len_R);
+
+    py::buffer_info buf_OUT = OUT.request();
+
+    double *ptr_OUT = (double *) buf_OUT.ptr;
+
+    int j;
+    double *grid_R1R2 = new double[3];
+    int IDchange;
+    for (int i=0; i<len_R; i++) {
+        j=0; //--
+        IDchange = find_id_change(k,1./R[i]);
+        grid_R1R2[j] = C_ii_TopHat_MAIN_lowR(Pk, k, R[i]*(1.-dRperc), IDchange, OmaxSmallK, n);
+        grid_R1R2[j] += C_ii_TopHat_MAIN(coeffs, k, R[i]*(1.-dRperc),IDchange);
+        j=1; //+-
+        grid_R1R2[j] = C_ij_TopHat_MAIN_lowR(Pk, k, R[i]*(1.+dRperc), R[i]*(1.-dRperc), IDchange, OmaxSmallK, n);
+        grid_R1R2[j] += C_ij_TopHat_MAIN(coeffs, k, R[i]*(1.+dRperc), R[i]*(1.-dRperc),IDchange);
+        j=2; //++
+        grid_R1R2[j] = C_ii_TopHat_MAIN_lowR(Pk, k, R[i]*(1.+dRperc), IDchange, OmaxSmallK, n);
+        grid_R1R2[j] += C_ii_TopHat_MAIN(coeffs, k, R[i]*(1.+dRperc),IDchange);
+
+        ptr_OUT[i] = 0.25 * (grid_R1R2[2] - 2. * grid_R1R2[1] + grid_R1R2[0]) / (R[i]*R[i]*dRperc*dRperc);
+    }
+    return OUT;
+
+}
+
+
 py::array_t<double> sigma2_TopHat(vector<double> &Pk, vector<double> &k, vector<double> &R, double n, int OmaxSmallK) {
 
     int len_x = Pk.size();
@@ -586,10 +676,316 @@ py::array_t<double> sigma2_TopHat(vector<double> &Pk, vector<double> &k, vector<
     return OUT;
 }
 
+
+
+
+
+vector<double> dr_square_top_hat_rk_HR(double r, vector<double> &k) {
+    
+    double X0=1e-1;
+    int len_x = k.size();
+    double x;
+    vector<double> OUT(len_x);
+
+    double sin_x, cos_x, x2, x4, x6, x8;
+
+    int i = 0;
+    x = r * k[i];
+    while (x < X0) {
+        x2 = x*x;
+        x4 = x2*x2;
+        x6 = x4*x2;
+        x8 = x6*x2;
+        OUT[i] = 2. * k[i] * x * (-1 / 5. + x2/70. - x4/2520. +x6/166320.) * (1. - x2/10. +x4/280. - x6/15120. +x8/1330560.);
+
+        i += 1;
+        x = r * k[i];
+    }
+
+
+    for (int j=i; j<len_x; j++) {
+        x = r * k[j];
+        x2 = x*x;
+        sin_x = sin(x);
+        cos_x = cos(x);
+        // OUT[j] = 18. * ((x**2-3.) * sin(x)**2 - 3. * x * x * cos(x)**2 + (6.*x - x*x*x) * sin(x) * cos(x)) / (x * x * x * x * x * x * x);
+        OUT[j] = 18. * k[j] * ((x2 - 3.) * sin_x * sin_x - 3. * x2 * cos_x * cos_x + 
+                               (6. - x2) * x * sin_x * cos_x) / (x2 * x2 * x2 * x);
+    }
+
+    return OUT;
+}
+
+
+
+
+double dSdR_TopHat_MAIN(double coeffs[][4], vector<double> &x, double a, int IDchange) {
+
+    double a2 = a*a;
+    double a3 = a*a*a;
+    double a6 = a3*a3;
+    double Si_2ax, Ci_2ax, cos_2ax, sin_2ax, lnx;
+
+    double Coeff_tot_3, Coeff_tot_2, Coeff_tot_1, Coeff_tot_0;
+    double Coeff_tot_3_prev, Coeff_tot_2_prev, Coeff_tot_1_prev, Coeff_tot_0_prev;
+    double da_Coeff_tot_3, da_Coeff_tot_2, da_Coeff_tot_1, da_Coeff_tot_0;
+    double da_Coeff_tot_3_prev, da_Coeff_tot_2_prev, da_Coeff_tot_1_prev, da_Coeff_tot_0_prev;
+    
+    double INT0 = 0;
+    //int i = IDchange;
+    int len_x = x.size();
+
+
+
+    alglib::sinecosineintegrals(2. * a * x[IDchange], Si_2ax, Ci_2ax);
+    //Si_2ax = gsl_sf_Si(2. * a * x[IDchange]);
+    //Ci_2ax = gsl_sf_Ci(2. * a * x[IDchange]);
+    lnx = log(x[IDchange]);
+    sin_2ax = sin(2. * a * x[IDchange]);
+    cos_2ax = cos(2. * a * x[IDchange]);
+
+    Coeff_tot_3_prev = (0.5 * lnx - 0.5 * Ci_2ax + 5. / 8. * cos_2ax + 0.25 * a * x[IDchange] * sin_2ax + 0.25 * a2 * x[IDchange]*x[IDchange]);
+    Coeff_tot_2_prev = ((cos_2ax - 1.) / (2. * x[IDchange]) + 0.5 * a2 * x[IDchange] + 0.25 * a * sin_2ax);
+    Coeff_tot_1_prev = (0.5 * a2 * (lnx - Ci_2ax) + 0.5 * a * sin_2ax / x[IDchange] + 0.25 * (cos_2ax - 1.) / (x[IDchange]*x[IDchange]));
+    Coeff_tot_0_prev = (a3 * Si_2ax / 3. + (cos_2ax - 3.) * a2 / (6. * x[IDchange]) + a * sin_2ax / (3. * x[IDchange]*x[IDchange]) + (cos_2ax - 1.) / (6. * x[IDchange]*x[IDchange]*x[IDchange]));
+
+    da_Coeff_tot_3_prev = 0.5 * (a*x[IDchange]*x[IDchange] - 1./a) * cos_2ax - x[IDchange]*sin_2ax + 0.5*a*x[IDchange]*x[IDchange];
+    da_Coeff_tot_2_prev = 0.5 * a*x[IDchange] * cos_2ax - 0.75 * sin_2ax + a*x[IDchange];
+    da_Coeff_tot_1_prev = a * (lnx - Ci_2ax + 0.5*cos_2ax);
+    da_Coeff_tot_0_prev = a2 * Si_2ax  + a * (cos_2ax - 1.) / x[IDchange];
+
+    // #pragma omp parallel for num_threads( nCPU )
+    for (int i = IDchange + 1; i < len_x; i++) {
+
+        alglib::sinecosineintegrals(2. * a * x[i], Si_2ax, Ci_2ax);
+        lnx = log(x[i]);
+        sin_2ax = sin(2. * a * x[i]);
+        cos_2ax = cos(2. * a * x[i]);
+
+        // standard part
+        Coeff_tot_3 = (0.5 * lnx - 0.5 * Ci_2ax + 5. / 8. * cos_2ax + 0.25 * a * x[i] * sin_2ax + 0.25 * a2 * x[i]*x[i]);
+        Coeff_tot_2 = ((cos_2ax - 1.) / (2. * x[i]) + 0.5 * a2 * x[i] + 0.25 * a * sin_2ax);
+        Coeff_tot_1 = (0.5 * a2 * (lnx - Ci_2ax) + 0.5 * a * sin_2ax / x[i] + 0.25 * (cos_2ax - 1.) / (x[i]*x[i]));
+        Coeff_tot_0 = (a3 * Si_2ax / 3. + (cos_2ax - 3.) * a2 / (6. * x[i]) + a * sin_2ax / (3. * x[i]*x[i]) + (cos_2ax - 1.) / (6. * x[i]*x[i]*x[i]));
+
+
+        INT0 -= 6./a * ((Coeff_tot_3 - Coeff_tot_3_prev) * coeffs[i-1][3] +
+                        (Coeff_tot_2 - Coeff_tot_2_prev) * coeffs[i-1][2] + 
+                        (Coeff_tot_1 - Coeff_tot_1_prev) * coeffs[i-1][1] + 
+                        (Coeff_tot_0 - Coeff_tot_0_prev) * coeffs[i-1][0]);
+
+        Coeff_tot_3_prev = Coeff_tot_3;
+        Coeff_tot_2_prev = Coeff_tot_2;
+        Coeff_tot_1_prev = Coeff_tot_1;
+        Coeff_tot_0_prev = Coeff_tot_0;
+
+
+        // derivative part
+        da_Coeff_tot_3 = 0.5 * (a*x[i]*x[i] - 1./a) * cos_2ax - x[i]*sin_2ax + 0.5*a*x[i]*x[i];
+        da_Coeff_tot_2 = 0.5 * a*x[i] * cos_2ax - 0.75 * sin_2ax + a*x[i];
+        da_Coeff_tot_1 = a * (lnx - Ci_2ax + 0.5*cos_2ax);
+        da_Coeff_tot_0 = a2 * Si_2ax  + a * (cos_2ax - 1.) / x[i];
+
+        INT0 += (da_Coeff_tot_3 - da_Coeff_tot_3_prev) * coeffs[i-1][3] + 
+                (da_Coeff_tot_2 - da_Coeff_tot_2_prev) * coeffs[i-1][2] + 
+                (da_Coeff_tot_1 - da_Coeff_tot_1_prev) * coeffs[i-1][1] + 
+                (da_Coeff_tot_0 - da_Coeff_tot_0_prev) * coeffs[i-1][0];
+
+
+        da_Coeff_tot_3_prev = da_Coeff_tot_3;
+        da_Coeff_tot_2_prev = da_Coeff_tot_2;
+        da_Coeff_tot_1_prev = da_Coeff_tot_1;
+        da_Coeff_tot_0_prev = da_Coeff_tot_0;
+
+    }
+    
+    INT0 *= 9. / (2. * M_PI * M_PI) / a6;
+
+    return INT0;
+}
+
+
+
+double dSdR_TopHat_MAIN_lowR(
+        vector<double> &Pk, vector<double> &k, double R, int IDchange, int OMAX, double n) {
+    
+
+    int len_x = Pk.size();
+    double INT0;
+
+    vector<double> Pk_k2_w1w2(len_x);
+    vector<double> dr_W2 = dr_square_top_hat_rk_HR(R,k);
+    for (int i = 0; i < len_x; i++) {
+        Pk_k2_w1w2[i] = Pk[i] * k[i] * k[i] * dr_W2[i];
+    }
+
+    double (*coeffs)[4] = new double[len_x-1][4];
+    double (*abcd)[4] = new double[len_x][4];
+    double *xx = new double[len_x];
+    
+    tridiagonal_elements_for_k_not_a_knot_tmp(k, Pk_k2_w1w2, abcd);
+    solve_tridiagonal_system_tmp(abcd, xx, len_x);
+    coeffs_from_k_tmp(k, Pk_k2_w1w2, xx, coeffs, len_x);
+
+    delete[] xx;
+    delete[] abcd;
+
+
+    if (OMAX <= 0) {
+        INT0 = 0;
+    } else {
+        INT0 = IntegrationSmallK(Pk[0], k[0], n, R, R, OMAX);
+    }
+
+    for (int i = 0; i < IDchange; i++) {
+        INT0 += (coeffs[i][0] + 
+                 coeffs[i][1] / 2. +
+                 coeffs[i][2] / 3. + 
+                 coeffs[i][3] / 4.) * (k[i+1] -  k[i]);
+    }
+    
+    INT0 /= 2. * M_PI * M_PI;
+    
+    delete[] coeffs;
+    
+    return INT0;
+}
+
+py::array_t<double> dSdR_TopHat(vector<double> &Pk, vector<double> &k, vector<double> &R, double n, int OmaxSmallK) {
+
+    int len_x = Pk.size();
+    int len_R = R.size();
+
+    double (*coeffs)[4] = new double[len_x-1][4];
+    double (*abcd)[4] = new double[len_x][4];
+    double *xx = new double[len_x];
+    
+
+    tridiagonal_elements_for_k_not_a_knot_tmp(k, Pk, abcd);
+    solve_tridiagonal_system_tmp(abcd, xx, len_x);
+    coeffs_from_k_tmp(k, Pk, xx, coeffs, len_x);
+
+
+    explicit_from_implicit_coeffs(coeffs, k);
+
+
+    py::array_t<double> OUT = py::array_t<double>(len_R);
+
+    py::buffer_info buf_OUT = OUT.request();
+
+
+    double *ptr_OUT = (double *) buf_OUT.ptr;
+
+
+    for (int i=0; i < len_R; i++) {
+        int IDchange = find_id_change(k,1./R[i]);
+        ptr_OUT[i] = dSdR_TopHat_MAIN_lowR(Pk, k, R[i], IDchange, OmaxSmallK, n);
+        ptr_OUT[i] += dSdR_TopHat_MAIN(coeffs, k, R[i],IDchange);
+        //cout << "i: " << i << ", IDchange: " << IDchange << ", " << dSdR_TopHat_MAIN_lowR(Pk, k, R[i], IDchange, OmaxSmallK, n) << ", " << dSdR_TopHat_MAIN(coeffs, k, R[i],IDchange) << endl;
+    }    
+
+    delete[] coeffs;
+    return OUT;
+}
+
+
+py::array_t<double> dSdR_TopHat_bruteforce(vector<double> &Pk, vector<double> &k, vector<double> &R, int NkPerZeros, double n, int OmaxSmallK) {
+
+    int len_x = Pk.size();
+    int len_R = R.size();
+
+    double (*coeffs)[4] = new double[len_x-1][4];
+    double (*abcd)[4] = new double[len_x][4];
+    double *xx = new double[len_x];
+    
+
+    tridiagonal_elements_for_k_not_a_knot_tmp(k, Pk, abcd);
+    solve_tridiagonal_system_tmp(abcd, xx, len_x);
+    coeffs_from_k_tmp(k, Pk, xx, coeffs, len_x);
+
+
+
+
+
+    int len_HR = (len_x-1)*NkPerZeros+1;
+    vector<double> k_HR = logspace(k[0],k[len_x-1],len_HR);
+    vector<double> Pk_HR = get_values_from_coeffs(k_HR,k,coeffs);
+    vector<double> Pk_k2_dr_W2 (len_HR);
+
+    cout << Pk_HR[100] << endl;
+
+
+    delete[] xx;
+    delete[] abcd;
+    delete[] coeffs;
+    
+
+
+    py::array_t<double> OUT = py::array_t<double>(len_R);
+
+    py::buffer_info buf_OUT = OUT.request();
+
+
+    double *ptr_OUT = (double *) buf_OUT.ptr;
+
+
+    if (OmaxSmallK <= 0) {
+        for (int i=0; i<len_R; i++) {
+            ptr_OUT[i] = 0;
+        }
+    } else {
+        for (int i=0; i<len_R; i++) {
+            ptr_OUT[i] = IntegrationSmallK(Pk[0], k[0], n, R[i], R[i], OmaxSmallK);
+        }
+    }
+
+
+    double (*coeffs_HR)[4] = new double[len_HR-1][4];
+    double (*abcd_HR)[4] = new double[len_HR][4];
+    double *xx_HR = new double[len_HR];
+    double norm = 2. * M_PI * M_PI;
+
+    for (int i=0; i<len_R; i++) {
+        //ptr_OUT[i] = dSdR_TopHat_bruteforce_MAIN(Pk_HR, k_HR, R[i], OmaxSmallK, n) 
+        vector<double> dr_W2 = dr_square_top_hat_rk_HR(R[i],k_HR);
+        for (int j=0; j<len_HR-1; j++) {
+            Pk_k2_dr_W2[j] = Pk_HR[j] * k_HR[j] * k_HR[j] * dr_W2[j];
+        }
+        
+        //coeffs = cubic_spline_coeffs(k, Pk * k**2 * dr_square_top_hat_rk_HR(R,k))
+
+        tridiagonal_elements_for_k_not_a_knot_tmp(k_HR, Pk_HR, abcd_HR);
+        solve_tridiagonal_system_tmp(abcd_HR, xx_HR, len_HR);
+        coeffs_from_k_tmp(k_HR, Pk_HR, xx_HR, coeffs_HR, len_HR);
+
+        for (int j=0; j<len_HR-1; j++) {
+            ptr_OUT[i] += (coeffs[j][0] + 
+                            coeffs[j][1] / 2. +
+                            coeffs[j][2] / 3. + 
+                            coeffs[j][3] / 4.) * (k[j+1] -  k[j]);
+            ptr_OUT[i] /= norm;
+        }
+    }
+
+    delete[] xx_HR;
+    delete[] abcd_HR;
+    delete[] coeffs_HR;
+
+
+    return OUT;
+}
+
+
 void init_ex_set_integration(py::module_ &m) {
     m.def("C_ij_TopHat", &C_ij_TopHat,
           py::arg("Pk"), py::arg("k"), py::arg("R"), py::arg("n")=0.96, py::arg("OmaxSmallK")=-1);
     m.def("sigma2_TopHat", &sigma2_TopHat,
           py::arg("Pk"), py::arg("k"), py::arg("R"), py::arg("n")=0.96, py::arg("OmaxSmallK")=-1);
+    m.def("sigma2_2_TopHat_numdiff", &sigma2_2_TopHat_numdiff,
+          py::arg("Pk"), py::arg("k"), py::arg("R"), py::arg("n")=0.96, py::arg("OmaxSmallK")=-1, py::arg("dRperc")=5e-3);
+    m.def("dSdR_TopHat", &dSdR_TopHat,
+          py::arg("Pk"), py::arg("k"), py::arg("R"), py::arg("n")=0.96, py::arg("OmaxSmallK")=-1);
     m.def("top_hat_rk_HR", &top_hat_rk_HR);
+    m.def("dr_square_top_hat_rk_HR", &dr_square_top_hat_rk_HR);
+    m.def("logspace", &logspace);
 }
