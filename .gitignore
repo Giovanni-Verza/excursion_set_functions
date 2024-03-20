@@ -3,3 +3,4 @@ excursion_set.egg-info/
 build/
 dist/
 .vscode/
+src/not_in_use
