@@ -3,6 +3,8 @@ excursion_set.egg-info/
 build/
 dist/
 .vscode/
+files.txt
+.gitignore
 src/not_in_use
 src/cpp/excursion_set_cholensky_OLD.cpp
 src/cpp/excursion_set_cholensky_correlations.cpp
