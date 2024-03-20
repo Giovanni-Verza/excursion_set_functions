@@ -20,30 +20,7 @@ namespace py = pybind11;
 
 
 
-vector<double> linspace(double a, double b, int n) {
-    vector<double> out(n);
-    double delta = (b - a) / (n - 1);
-    for (int i=0; i < n - 1; i++) {
-        out[i] = a + delta * i;
-    }
-    out[n-1] = b;
-    return out;
-}
 
-vector<double> logspace(double a, double b, int n) {
-    vector<double> out(n);
-    double log_a = log2(a);
-    double log_b = log2(b);
-    double delta = (log_b - log_a) / (n - 1);
-    out[0] = a;
-
-    for (int i=1; i < n - 1; i++) {
-        out[i] = pow(2.,log_a + delta * i);
-    }
-    out[n-1] = b;
-
-    return out;
-}
 
 
 void tridiagonal_elements_for_k_not_a_knot_tmp(vector<double> &x, vector<double> &y, double abcd[][4]) {
@@ -889,91 +866,6 @@ py::array_t<double> dSdR_TopHat(vector<double> &Pk, vector<double> &k, vector<do
 }
 
 
-py::array_t<double> dSdR_TopHat_bruteforce(vector<double> &Pk, vector<double> &k, vector<double> &R, int NkPerZeros, double n, int OmaxSmallK) {
-
-    int len_x = Pk.size();
-    int len_R = R.size();
-
-    double (*coeffs)[4] = new double[len_x-1][4];
-    double (*abcd)[4] = new double[len_x][4];
-    double *xx = new double[len_x];
-    
-
-    tridiagonal_elements_for_k_not_a_knot_tmp(k, Pk, abcd);
-    solve_tridiagonal_system_tmp(abcd, xx, len_x);
-    coeffs_from_k_tmp(k, Pk, xx, coeffs, len_x);
-
-
-
-
-
-    int len_HR = (len_x-1)*NkPerZeros+1;
-    vector<double> k_HR = logspace(k[0],k[len_x-1],len_HR);
-    vector<double> Pk_HR = get_values_from_coeffs(k_HR,k,coeffs);
-    vector<double> Pk_k2_dr_W2 (len_HR);
-
-    cout << Pk_HR[100] << endl;
-
-
-    delete[] xx;
-    delete[] abcd;
-    delete[] coeffs;
-    
-
-
-    py::array_t<double> OUT = py::array_t<double>(len_R);
-
-    py::buffer_info buf_OUT = OUT.request();
-
-
-    double *ptr_OUT = (double *) buf_OUT.ptr;
-
-
-    if (OmaxSmallK <= 0) {
-        for (int i=0; i<len_R; i++) {
-            ptr_OUT[i] = 0;
-        }
-    } else {
-        for (int i=0; i<len_R; i++) {
-            ptr_OUT[i] = IntegrationSmallK(Pk[0], k[0], n, R[i], R[i], OmaxSmallK);
-        }
-    }
-
-
-    double (*coeffs_HR)[4] = new double[len_HR-1][4];
-    double (*abcd_HR)[4] = new double[len_HR][4];
-    double *xx_HR = new double[len_HR];
-    double norm = 2. * M_PI * M_PI;
-
-    for (int i=0; i<len_R; i++) {
-        //ptr_OUT[i] = dSdR_TopHat_bruteforce_MAIN(Pk_HR, k_HR, R[i], OmaxSmallK, n) 
-        vector<double> dr_W2 = dr_square_top_hat_rk_HR(R[i],k_HR);
-        for (int j=0; j<len_HR-1; j++) {
-            Pk_k2_dr_W2[j] = Pk_HR[j] * k_HR[j] * k_HR[j] * dr_W2[j];
-        }
-        
-        //coeffs = cubic_spline_coeffs(k, Pk * k**2 * dr_square_top_hat_rk_HR(R,k))
-
-        tridiagonal_elements_for_k_not_a_knot_tmp(k_HR, Pk_HR, abcd_HR);
-        solve_tridiagonal_system_tmp(abcd_HR, xx_HR, len_HR);
-        coeffs_from_k_tmp(k_HR, Pk_HR, xx_HR, coeffs_HR, len_HR);
-
-        for (int j=0; j<len_HR-1; j++) {
-            ptr_OUT[i] += (coeffs[j][0] + 
-                            coeffs[j][1] / 2. +
-                            coeffs[j][2] / 3. + 
-                            coeffs[j][3] / 4.) * (k[j+1] -  k[j]);
-            ptr_OUT[i] /= norm;
-        }
-    }
-
-    delete[] xx_HR;
-    delete[] abcd_HR;
-    delete[] coeffs_HR;
-
-
-    return OUT;
-}
 
 
 void init_ex_set_integration(py::module_ &m) {
@@ -986,6 +878,5 @@ void init_ex_set_integration(py::module_ &m) {
     m.def("dSdR_TopHat", &dSdR_TopHat,
           py::arg("Pk"), py::arg("k"), py::arg("R"), py::arg("n")=0.96, py::arg("OmaxSmallK")=-1);
     m.def("top_hat_rk_HR", &top_hat_rk_HR);
-    m.def("dr_square_top_hat_rk_HR", &dr_square_top_hat_rk_HR);
-    m.def("logspace", &logspace);
+    //m.def("dr_square_top_hat_rk_HR", &dr_square_top_hat_rk_HR);
 }

@@ -13,6 +13,31 @@ using namespace std;
 
 namespace py = pybind11;
 
+vector<double> linspace(double a, double b, int n) {
+    vector<double> out(n);
+    double delta = (b - a) / (n - 1);
+    for (int i=0; i < n - 1; i++) {
+        out[i] = a + delta * i;
+    }
+    out[n-1] = b;
+    return out;
+}
+
+vector<double> logspace(double a, double b, int n) {
+    vector<double> out(n);
+    double log_a = log2(a);
+    double log_b = log2(b);
+    double delta = (log_b - log_a) / (n - 1);
+    out[0] = a;
+
+    for (int i=1; i < n - 1; i++) {
+        out[i] = pow(2.,log_a + delta * i);
+    }
+    out[n-1] = b;
+
+    return out;
+}
+
 vector<int> first_crossing_from_multiplicity_func(vector<int> &NumCrossing) {
     vector<int> FirstCrossing(NumCrossing);
 

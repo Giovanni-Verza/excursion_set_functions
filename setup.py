@@ -20,7 +20,8 @@ __version__ = "0.0.1"
 file_list_cpp = []
 for ff in sorted(glob("src/cpp/*.cpp")):
     if ('OLD_' in ff) | ('_OLD' in ff):
-        print(ff)
+        #print(ff)
+        pass
     else:
         file_list_cpp.append(ff)
 
@@ -40,6 +41,8 @@ ext_modules = [
         ),
 ]
 
+print(find_packages()+['excursion_set.python'])
+
 setup(
     name="excursion_set",
     version=__version__,
@@ -50,7 +53,7 @@ setup(
     long_description="",
     #py_modules=['excursion_set'],
     package_dir={'./':'excursion_set'},
-    packages=find_packages(),#include=['excursion_set','excursion_set.*']),#['excursion_set']
+    packages=find_packages(), #include=['excursion_set','excursion_set.*']),#['excursion_set']
     ext_modules=ext_modules,
     #extras_require={"test": "pytest"},
     # Currently, build_ext only provides an optional "highest supported C++

@@ -1,6 +1,4 @@
 setup.py
-PYTHON_PROVVISORIO/__init__.py
-PYTHON_PROVVISORIO/excursion_set_python.py
 excursion_set.egg-info/PKG-INFO
 excursion_set.egg-info/SOURCES.txt
 excursion_set.egg-info/dependency_links.txt

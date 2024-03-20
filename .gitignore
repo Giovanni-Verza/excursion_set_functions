@@ -4,3 +4,7 @@ build/
 dist/
 .vscode/
 src/not_in_use
+src/cpp/excursion_set_cholensky_OLD.cpp
+src/cpp/excursion_set_cholensky_correlations.cpp
+src/excursion_set_python/integration_function_extra.py
+*__pycache__*
