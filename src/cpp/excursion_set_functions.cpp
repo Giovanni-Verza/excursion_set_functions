@@ -18,11 +18,6 @@ void init_ex_set_integration(py::module_ &m);
 
 
 PYBIND11_MODULE(excursion_set_functions, m) {
-    //init_ex_set_analytical(m);
-    //auto m_a = m.def_submodule("module_analytical", "This is A.");
-    //m_a.def("analytical", &module_analytical::init_ex_set_analytical);
-    //py::module analytical = m.def_submodule("analytical", "...");
-    //analytical.def("analytical", &module_analytical::init_ex_set_analytical, "Do some work");
     auto m_analytical = m.def_submodule("analytical", "Analytical multiplicity functions");
     init_ex_set_analytical(m_analytical);
     
