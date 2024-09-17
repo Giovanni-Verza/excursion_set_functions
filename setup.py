@@ -4,6 +4,7 @@ from glob import glob
 from pybind11.setup_helpers import Pybind11Extension, build_ext
 from pybind11 import get_cmake_dir
 
+import os
 import sys
 
 __version__ = "0.0.1"
@@ -26,25 +27,22 @@ for ff in sorted(glob("src/cpp/*.cpp")):
         file_list_cpp.append(ff)
 
 ext_modules = [
-    Pybind11Extension("excursion_set_functions",file_list_cpp,
-        #["src/cpp/excursion_set_cholensky.cpp",
-        #"src/cpp/excursion_set_cholensky_correlations.cpp",
-        #"src/cpp/excursion_set_analytical.cpp",
-        #"src/cpp/spline_functions.cpp",
-        #"src/cpp/integration_functions.cpp",
-        #"src/cpp/excursion_set_functions.cpp"],
-        # Example: passing in the version to the compiled code
-        define_macros = [('VERSION_INFO', __version__)],
-        extra_compile_args=['-fopenmp','-I/home/giovanni/Desktop/Excursion_Set/excursion_set_functions/src/cpp/'],#,*sorted(glob("src/cpp/*.h"))], #'-O3'],
-        #libraries = ['omp'],
-        #extra_link_args=['-fopenmp','-O2']
-        ),
+    Pybind11Extension("excursion_set_functions",
+                      file_list_cpp,
+                      define_macros = [('VERSION_INFO', __version__)],
+                      extra_compile_args=['-fopenmp',
+                                          '-I'+os.getcwd()+'/src/cpp/'],#,*sorted(glob("src/cpp/*.h"))], #'-O3'],
+                      extra_link_args=['-fopenmp'],
+                      # libraries = ['omp'],
+                      # extra_link_args=['-fopenmp','-O2']
+                      # ),
+    )
 ]
 
 print(find_packages()+['excursion_set.python'])
 
 setup(
-    name="excursion_set",
+    name="excursion_set_functions",
     version=__version__,
     author="Giovanni Verza",
     author_email="giova.verza@gmail.com",
@@ -52,7 +50,7 @@ setup(
     description="Excursion-set functions with Cholensky decomposition",
     long_description="",
     #py_modules=['excursion_set'],
-    package_dir={'./':'excursion_set'},
+    package_dir={'./':'excursion_set_functions'},
     packages=find_packages(), #include=['excursion_set','excursion_set.*']),#['excursion_set']
     ext_modules=ext_modules,
     #extras_require={"test": "pytest"},
