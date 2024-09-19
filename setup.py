@@ -72,7 +72,7 @@ ext_modules = [
                       # ),
     )
 ]
-
+asd = 1
 print(find_packages()+['excursion_set.python'])
 
 setup(
