@@ -1,6 +1,7 @@
 # excursion_set_functions
 
-pure python module at src/excursion_set_python
+- C++/python module
+- pure python module at src/excursion_set_python
 
 ## Installation
 
