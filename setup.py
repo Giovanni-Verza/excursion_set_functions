@@ -22,17 +22,17 @@ __version__ = "0.2"
 PWD = os.path.dirname(os.path.realpath(__file__)) + '/'
 print('PWD:', PWD,flush=True)
 
-OPENMP=False
+OPENMP = False
 
 extra_compile_args = []
 extra_link_args = []
+
+
 if OPENMP:
     extra_compile_args.append('-fopenmp')
     extra_link_args.append('-fopenmp')
-
-extra_compile_args.append('-I'+PWD+'/src/cpp/')
-
-if not OPENMP:
+    cpp_file_path =  PWD + 'src/cpp/'
+else:
     cpp_file_path = PWD + 'src/cpp_noopenmp/'
     if not os.path.exists(cpp_file_path):
         os.makedirs(cpp_file_path)
@@ -50,8 +50,8 @@ if not OPENMP:
             # Write the file out again
             with open(cpp_file_path + FF, 'w') as file:
                 file.write(filedata)
-else:
-    cpp_file_path =  PWD + 'src/cpp/'
+
+extra_compile_args.append('-I'+cpp_file_path)
 
 file_list_cpp = []
 for ff in sorted(glob(cpp_file_path + '*.cpp')):
