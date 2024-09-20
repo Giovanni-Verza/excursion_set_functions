@@ -10,7 +10,7 @@ C++/python module can be installed by running
 
 or [DEPRECATED]
 
-python setup.py install 
+`python setup.py install`
 
 pure python dependencies: numpy, numba, scipy
 

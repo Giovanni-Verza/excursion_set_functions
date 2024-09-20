@@ -48,7 +48,7 @@ def delta_NL_from_lin(DELTA_lin):
 
 
 
-jit(nopython=True)
+@jit(nopython=True)
 def find_CL_brutal_force(sample,range_array):
     xarr = np.sort(sample)
     len_arr = len(xarr)
