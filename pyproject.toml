@@ -25,21 +25,42 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
 ]
 
+[tool.scikit-build]
+wheel.expand-macos-universal-tags = true
 
-#[tool.scikit-build-core.packages]
-#excursion_set_functions = {include = "src/excursion_set_python" }
-#my_python_module = { include = "my_python_module/*" }
-#"excursion_set_functions/excursion_set_python" = "src/excursion_set_python"
-#[tool.scikit-build.wheel.packages]
-#"excursion_set_functions/excursion_set_python" = "src/excursion_set_python"
+#[tool.ruff.lint.isort]
+#required-imports = ["from __future__ import annotations"]
 
-#[tool.pytest.ini_options]
-#minversion = "6.0"
-#addopts = ["-ra", "--showlocals", "--strict-markers", "--strict-config"]
-#xfail_strict = true
-#log_cli_level = "INFO"
-#filterwarnings = [
-#  "error",
-#  "ignore::pytest.PytestCacheWarning",
-#]
-#testpaths = ["tests"]
+[tool.ruff]
+src = ["src"]
+
+[tool.ruff.lint]
+extend-select = [
+  "B",           # flake8-bugbear
+  "I",           # isort
+  "ARG",         # flake8-unused-arguments
+  "C4",          # flake8-comprehensions
+  "EM",          # flake8-errmsg
+  "ICN",         # flake8-import-conventions
+  "G",           # flake8-logging-format
+  "PGH",         # pygrep-hooks
+  "PIE",         # flake8-pie
+  "PL",          # pylint
+  "PT",          # flake8-pytest-style
+  "PTH",         # flake8-use-pathlib
+  "RET",         # flake8-return
+  "RUF",         # Ruff-specific
+  "SIM",         # flake8-simplify
+  "T20",         # flake8-print
+  "UP",          # pyupgrade
+  "YTT",         # flake8-2020
+  "EXE",         # flake8-executable
+  "NPY",         # NumPy specific rules
+  "PD",          # pandas-vet
+]
+ignore = [
+  "PLR09",    # Too many X
+  "PLR2004",  # Magic comparison
+]
+isort.required-imports = ["from __future__ import annotations"]
+

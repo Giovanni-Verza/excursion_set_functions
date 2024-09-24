@@ -14,6 +14,7 @@ project(
 find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
 find_package(pybind11 CONFIG REQUIRED)
 find_package(OpenMP REQUIRED)
+find_package(CUDA)
 
 #find_package(OpenMP)
 #if (OPENMP_FOUND)
@@ -22,11 +23,6 @@ find_package(OpenMP REQUIRED)
 #    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 #endif()
 
-#file(GLOB SOURCES src/cpp/*.cpp)
-
-# Add a library using FindPython's tooling (pybind11 also provides a helper like
-# this)
-## MAIN:
 set(SOURCES "src/cpp/main.cpp" 
             "src/cpp/spline_functions.cpp"
             "src/cpp/excursion_set_cholensky.cpp"
@@ -42,32 +38,20 @@ target_link_libraries(_core PRIVATE ${SOURCES_H})
 target_include_directories(_core PRIVATE src/cpp/)
 target_include_directories(_core PRIVATE src/cpp/alglib/)
 target_link_libraries(_core PRIVATE OpenMP::OpenMP_CXX)
+#if(CUDA_FOUND)
+#    message("CUDA is available. Version: ${CUDA_VERSION}")
+#    #enable_language(CUDA)
+#    find_package(OpenACC REQUIRED)
+#    target_link_libraries(_core PRIVATE OpenACC::OpenACC_CXX)
+#else()
+#    message("CUDA is not available.")
+#endif()
 
-#python_add_library(some_ext MODULE WITH_SOABI USE_SABI 3.11 ...)
+
+# This is passing in the version as a define just as an example
+
+target_compile_definitions(_core PRIVATE VERSION_INFO=${PROJECT_VERSION})
 
 # The install directory is the output (wheel) directory
 install(TARGETS _core DESTINATION excursion_set_functions)
 
-
-#set(SOURCES_PY "src/excursion_set_python")
-#file(GLOB SOURCES_PY "src/excursion_set_python/*.py")
-#python_add_library(_pure_python MODULE ${SOURCES_PY} WITH_SOABI)
-#add_library(_pure_python MODULE ${SOURCES_PY})
-#target_include_directories(_pure_python PRIVATE src/excursion_set_python)
-#install(TARGETS _pure_python DESTINATION excursion_set_functions)
-
-# The install directory is the output (wheel) directory
-#install(TARGETS _core DESTINATION excursion_set_functions)
-
-#set(SOURCES_PY "src/excursion_set_python")
-#add_subdirectory(src/excursion_set_python)
-#add_library(my_python_module MODULE my_module.py)
-#target_link_libraries(my_python_module PRIVATE Python3::Python)
-#install (FILES __init__.py DESTINATION _pure_python)
-#install (FILES skbuild_test.py DESTINATION _pure_python)
-
-
-#set(SOURCES_PY "src/excursion_set_python")
-#add_subdirectory(src/excursion_set_python)
-#install (FILES __init__.py DESTINATION _pure_python)
-#install (FILES skbuild_test.py DESTINATION _pure_python)

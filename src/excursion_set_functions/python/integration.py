@@ -8,7 +8,7 @@ from numba.core import types
 import scipy.special as sp
 #from multiprocessing import Pool, Process, Manager
 #from multiprocessing.pool import ThreadPool
-from . Spline_functions import *
+from .spline import *
 
 
 @jit(nopython=True,cache=True)

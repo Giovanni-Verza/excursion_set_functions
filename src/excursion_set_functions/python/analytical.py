@@ -3,17 +3,6 @@ from numba import jit
 from scipy import special
 
 
-@jit(nopython=True)
-def Lagrangian_tophat_mass_inR(R,Omega_M):
-    return 3.086e13/(2.*6.674*1.989) * Omega_M * R**3.
-
-@jit(nopython=True)
-def Lagrangian_tophat_radius_ofM(M,Omega_M):
-    return (M*(2.*6.674*1.989)/(3.086e13 * Omega_M)) ** (1./3.)
-
-@jit(nopython=True)
-def derivative_Lagrangian_tophat_mass_inR(R,Omega_M):
-    return 3.086e13/(2.*6.674*1.989) * Omega_M * R**2.*3.
 
 @jit(nopython=True)
 def f_ST_nu_unnorm(nu, norm, p, q):
