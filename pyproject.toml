@@ -1,11 +1,12 @@
 [build-system]
 requires = ["scikit-build-core>=0.3.3", "pybind11","numpy","numba"]
 build-backend = "scikit_build_core.build"
+#include-package-data = true
 
 
 [project]
 name = "excursion_set_functions"
-version = "0.1.0"
+version = "0.2.0"
 description="Excursion-set functions"
 readme = "README.md"
 authors = [
@@ -24,9 +25,13 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
 ]
 
+
+#[tool.scikit-build-core.packages]
+#excursion_set_functions = {include = "src/excursion_set_python" }
+#my_python_module = { include = "my_python_module/*" }
+#"excursion_set_functions/excursion_set_python" = "src/excursion_set_python"
 #[tool.scikit-build.wheel.packages]
 #"excursion_set_functions/excursion_set_python" = "src/excursion_set_python"
-
 
 #[tool.pytest.ini_options]
 #minversion = "6.0"

@@ -41,31 +41,33 @@ target_link_libraries(_core PRIVATE pybind11::headers)
 target_link_libraries(_core PRIVATE ${SOURCES_H})
 target_include_directories(_core PRIVATE src/cpp/)
 target_include_directories(_core PRIVATE src/cpp/alglib/)
-
-#file(GLOB SOURCES src/*.cpp ${skiplist_SOURCE_DIR}/src/cpp/SkipList.cpp)
-#file(GLOB SOURCES src/cpp/*.cpp)
-#add_library(_core SHARED ${SOURCES})
-
-#python_add_library(_core.spline MODULE src/cpp/spline_functions.cpp WITH_SOABI)
-#target_link_libraries(_core.spline PRIVATE pybind11::headers)
-#target_link_libraries(_core PRIVATE src/cpp/spline_functions.cpp)
-#target_include_directories(_core PRIVATE src/cpp/)
-
-#pybind11_add_module(spline src/cpp/spline_functions.cpp)
-#set_target_properties(spline PROPERTIES OUTPUT_NAME _core/spline)
-
-#target_link_libraries(spline PRIVATE pybind11::headers)
-#target_link_libraries(spline PRIVATE src/cpp/spline_functions.cpp)
-#pybind11_add_module(spline src/cpp/spline_functions.cpp)
-#python_add_library(_core.spline MODULE src/cpp/spline_functions.cpp WITH_SOABI)
-#target_link_libraries(_core.spline PRIVATE pybind11::headers)
-#target_link_libraries(_core PRIVATE src/cpp/)
-#list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/src/cpp/")
 target_link_libraries(_core PRIVATE OpenMP::OpenMP_CXX)
-#add_executable(spline src/cpp/spline_functions.cpp)
 
-# This is passing in the version as a define just as an example
-target_compile_definitions(_core PRIVATE VERSION_INFO=${PROJECT_VERSION})
+#python_add_library(some_ext MODULE WITH_SOABI USE_SABI 3.11 ...)
 
 # The install directory is the output (wheel) directory
 install(TARGETS _core DESTINATION excursion_set_functions)
+
+
+#set(SOURCES_PY "src/excursion_set_python")
+#file(GLOB SOURCES_PY "src/excursion_set_python/*.py")
+#python_add_library(_pure_python MODULE ${SOURCES_PY} WITH_SOABI)
+#add_library(_pure_python MODULE ${SOURCES_PY})
+#target_include_directories(_pure_python PRIVATE src/excursion_set_python)
+#install(TARGETS _pure_python DESTINATION excursion_set_functions)
+
+# The install directory is the output (wheel) directory
+#install(TARGETS _core DESTINATION excursion_set_functions)
+
+#set(SOURCES_PY "src/excursion_set_python")
+#add_subdirectory(src/excursion_set_python)
+#add_library(my_python_module MODULE my_module.py)
+#target_link_libraries(my_python_module PRIVATE Python3::Python)
+#install (FILES __init__.py DESTINATION _pure_python)
+#install (FILES skbuild_test.py DESTINATION _pure_python)
+
+
+#set(SOURCES_PY "src/excursion_set_python")
+#add_subdirectory(src/excursion_set_python)
+#install (FILES __init__.py DESTINATION _pure_python)
+#install (FILES skbuild_test.py DESTINATION _pure_python)
