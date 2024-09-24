@@ -7,11 +7,7 @@
 
 C++/python module can be installed by running
 
-`python -m pip install .`
-
-or [DEPRECATED]
-
-python setup.py install 
+`pip install .`
 
 pure python dependencies: numpy, numba, scipy
 

@@ -5,10 +5,12 @@
 #include <thread> 
 #include <map>
 #include <omp.h>
+//#include <openacc.h>
 #include <math.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
+
 using namespace std;
 
 namespace py = pybind11;
@@ -347,15 +349,88 @@ py::array_t<long long int> first_crossing_array_barrier_single(
 
 
 
+vector<int> first_crossing_single_barrier_array_test(
+    vector<double> F_ij_reshaped, int N_paths, vector<double> delta_c) {
+    //py::array_t<double> F_ij_reshaped, int N_paths, int N_Rfilt, double delta_c) {
+
+   
+    random_device rd;
+    mt19937 e2(rd());
+    normal_distribution<double> dist(0., 1.);
+   
+    int nCPU;
+    #if defined(_OPENMP)
+        nCPU = omp_get_max_threads();
+    #else
+        nCPU = 1;
+    #endif
+
+    int N_Rfilt = round((sqrt(8 * F_ij_reshaped.size() + 1) - 1) / 2);
+ 
+    vector<int> NumCrossing(N_Rfilt, 0);
+    vector<double> RAND(N_Rfilt);
+
+    #pragma omp declare reduction(vec_int_plus : std::vector<int> : \
+                              std::transform(omp_out.begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), std::plus<int>())) \
+                   initializer(omp_priv = decltype(omp_orig)(omp_orig.size()))
+    //#pragma acc declare reduction(vec_int_plus : std::vector<int> : \
+    //                          std::transform(omp_out.begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), std::plus<int>())) \
+    //                initializer(omp_priv = decltype(omp_orig)(omp_orig.size()))
+
+    #pragma omp parallel for num_threads( nCPU ) reduction(vec_int_plus : NumCrossing)
+    ////#pragma acc data copy(F_ij_reshaped), copy(RAND)
+    for (int nn = 0; nn < N_paths; nn++) {
+        int progr_ind_out = 0;
+        double FiltPath;
+        int i=0;
+        bool uncrossed = true;
+        //progr_ind_out = 0;
+        //uncrossed = true;
+        //i=0;
+        #pragma acc parallel loop
+        while ((i < N_Rfilt) && (uncrossed)) {
+            RAND[i] = dist(e2);
+            //progr_ind_in = 0;
+            FiltPath = 0.;
+            for (int s = 0; s < i+1; s++) {
+                FiltPath += F_ij_reshaped[progr_ind_out + s] * RAND[s];
+                //progr_ind_in += 1;
+            }
+            uncrossed = FiltPath < delta_c[i];
+            //if(FiltPath >= delta_c) {
+            //    NumCrossing[i] += 1;
+            //    break;
+            //}
+            //NumCrossing[i] += !uncrossed;
+            progr_ind_out += i + 1; //progr_ind_in;
+            i += 1;
+        }
+        NumCrossing[i-1] += !uncrossed;
+    }
+    return NumCrossing;
+}
+
+
+
+
 
 void init_ex_set_cholenski(py::module_ &m) {
-    m.def("first_crossing_single_barrier", &first_crossing_single_barrier);
-    m.def("first_crossing_single_barrier", &first_crossing_single_barrier_array);
+    m.def("first_crossing_single_barrier", &first_crossing_single_barrier, R"pbdoc(
+            Fisrt crossing of N_paths realizations of random walks with constant threshold
+        )pbdoc");
+    m.def("first_crossing_single_barrier", &first_crossing_single_barrier_array, R"pbdoc(
+            Fisrt crossing of N_paths realizations of random walks with a scale dependent threshold
+        )pbdoc");
+    m.def("first_crossing_single_barrier_test", &first_crossing_single_barrier_array_test);
     //m.def("first_crossing_single_barrier", &first_crossing_single_barrier<vector<double>, long long int, vector<double>>);
     //m.def("first_crossing_single_barrier_old", &first_crossing_single_barrier_old);
     //m.def("first_crossing_single_barrier_2", &first_crossing_single_barrier_2);
-    m.def("first_crossing_double_barrier", &first_crossing_double_barrier);
-    m.def("first_crossing_array_barrier_single", &first_crossing_array_barrier_single);
+    m.def("first_crossing_double_barrier", &first_crossing_double_barrier, R"pbdoc(
+            Fisrt crossing of N_paths realizations of random walks with constant double barrier
+        )pbdoc");
+    m.def("first_crossing_double_barrier", &first_crossing_array_barrier_single, R"pbdoc(
+            Fisrt crossing of N_paths realizations of random walks with scale dependent double barrier
+        )pbdoc");
 }
 
 

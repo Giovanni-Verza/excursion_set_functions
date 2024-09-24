@@ -13,6 +13,27 @@ def delta_lin_underdensity(D_nl):
     #Radius_ratio = (1.+D_nl)**(-1./3.)
     return DELTA_lin#, Radius_ratio
 
+def delta_lin_overdensity(D_nl):
+    Root = lambda x: D_nl - ((9./2.) * ((x - np.sin(x)) ** 2.)/(1. - np.cos(x)) ** 3. - 1.)
+    eta = optimize.brenth(Root,1e-6,np.pi * 2-1e-6)
+    DELTA_lin = (3./20.) * (6. * (eta - np.sin(eta)))**(2./3.)
+    #Radius_ratio = (1.+D_nl)**(-1./3.)
+    return DELTA_lin
+
+def delta_lin_from_NL(D_nl):
+    if np.iscalar(D_nl):
+        if D_nl < 0.:
+            return delta_lin_overdensity(D_nl)
+        elif D_nl > 0.:
+            return delta_lin_overdensity(D_nl)
+    OUT = np.zeros(len(D_nl))
+    for i in range(len(D_nl)):
+        if D_nl[i] < 0.:
+            OUT[i] = delta_lin_overdensity(D_nl[i])
+        elif D_nl[i] > 0.:
+            OUT[i] = delta_lin_overdensity(D_nl[i])
+    return OUT
+
 
 def delta_NL_underdensity(DELTA_lin):
     Root = lambda eta: DELTA_lin + (3./20.) * (6. * (np.sinh(eta)-eta))**(2./3.)
@@ -20,14 +41,6 @@ def delta_NL_underdensity(DELTA_lin):
     D_nl = ((9./2.) * ((np.sinh(x) - x) ** 2.)/(np.cosh(x)-1.) ** 3. - 1.)
     #Radius_ratio = (1.+D_nl)**(-1./3.)
     return D_nl#, Radius_ratio
-
-
-def delta_lin_overdensity(D_nl):
-    Root = lambda x: D_nl - ((9./2.) * ((x - np.sin(x)) ** 2.)/(1. - np.cos(x)) ** 3. - 1.)
-    eta = optimize.brenth(Root,1e-6,np.pi * 2-1e-6)
-    DELTA_lin = (3./20.) * (6. * (eta - np.sin(eta)))**(2./3.)
-    #Radius_ratio = (1.+D_nl)**(-1./3.)
-    return DELTA_lin
 
 
 def delta_NL_overdensity(DELTA_lin):
@@ -38,6 +51,11 @@ def delta_NL_overdensity(DELTA_lin):
     return D_nl
 
 def delta_NL_from_lin(DELTA_lin):
+    if np.iscalar(DELTA_lin):
+        if DELTA_lin < 0.:
+            return delta_NL_underdensity(DELTA_lin)
+        elif DELTA_lin[i] > 0.:
+            return delta_NL_overdensity(DELTA_lin)
     OUT = np.zeros(len(DELTA_lin))
     for i in range(len(DELTA_lin)):
         if DELTA_lin[i] < 0.:
@@ -48,7 +66,7 @@ def delta_NL_from_lin(DELTA_lin):
 
 
 
-jit(nopython=True)
+@jit(nopython=True)
 def find_CL_brutal_force(sample,range_array):
     xarr = np.sort(sample)
     len_arr = len(xarr)
@@ -67,3 +85,15 @@ def find_CL_brutal_force(sample,range_array):
         CL_out[ii,1] = xarr[ind_out + len_int]
     return CL_out
 
+
+#@jit(nopython=True)
+def Lagrangian_tophat_mass_inR(R,Omega_M):
+    return 3.086e13/(2.*6.674*1.989) * Omega_M * R**3.
+
+#@jit(nopython=True)
+def Lagrangian_tophat_radius_ofM(M,Omega_M):
+    return (M*(2.*6.674*1.989)/(3.086e13 * Omega_M)) ** (1./3.)
+
+#@jit(nopython=True)
+def derivative_Lagrangian_tophat_mass_inR(R,Omega_M):
+    return 3.086e13/(2.*6.674*1.989) * Omega_M * R**2.*3.
