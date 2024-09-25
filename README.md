@@ -1,13 +1,27 @@
 # excursion_set_functions
 
-pure python module at src/excursion_set_python
+C++/python module for excursion set related quantities
 
 ## Installation
 
-C++/python module can be installed by running
+The module can be installed by running
 
 `pip install .`
 
-pure python dependencies: numpy, numba, scipy
+## Dependencies
 
-C++/python dependecies: pybind11
+excursion_set_functions make use of
+
+- [pybind11]
+
+for the C++ part, and
+
+- [numpy]
+
+- [numba]
+
+- [scipy]
+
+for the pure python part.
+
+The C++ functions make use of Alglib package and are parallelizad with OpenMP.
