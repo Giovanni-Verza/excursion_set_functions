@@ -21,7 +21,7 @@ for the C++ part, and
 - `scipy`
 
 for the pure python part. 
-In addition, the C++ functions make use of [ALGLIB][] package and are parallelizad with OpenMP. The modeule is  built with [pybind11][] and [scikit-build-core][]
+In addition, the C++ functions make use of [ALGLIB][] package and are parallelizad with OpenMP. The modeule is  built with [pybind11][] and [scikit-build-core][].
 
 
 
