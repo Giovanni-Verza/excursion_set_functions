@@ -10,7 +10,7 @@ The module can be installed by running
 
 ## Dependencies
 
-Tested for Python 3.7+. The excursion_set_functions make use of
+The excursion_set_functions make use of
 
 - `pybind11`
 
@@ -21,7 +21,7 @@ for the C++ part, and
 - `scipy`
 
 for the pure python part. 
-In addition, the C++ functions make use of [ALGLIB][] package and are parallelizad with OpenMP. The modeule is  built with [pybind11][] and [scikit-build-core][].
+In addition, the C++ functions make use of [ALGLIB][] package and are parallelizad with OpenMP. The modeule is  built with [pybind11][] and [scikit-build-core][]. The module has been tested for Python 3.7+. 
 
 
 
