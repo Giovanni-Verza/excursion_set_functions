@@ -1,6 +1,6 @@
 # excursion_set_functions
 
-C++/python module to compute excursion-set related quantities, such as analytical and numerical multiplicity functions, Lagrangian void density profiles, various integation moments and covariance of the power spectrum. This module it has been use fo computations in [Verza et al. 2024][]
+C++/python module to compute excursion-set related quantities, such as analytical and numerical multiplicity functions, Lagrangian void density profiles, various integation moments and covariance of the power spectrum. This module it has been use for computations in [Verza et al. 2024][]
 
 ## Installation
 
