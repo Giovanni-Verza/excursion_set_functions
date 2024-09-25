@@ -1,16 +1,13 @@
-# Require CMake 3.15+ (matching scikit-build-core) Use new versions of all
-# policies up to CMake 3.27
+# Require CMake 3.15+ (matching scikit-build-core) Use new versions of all policies up to CMake 3.27
 cmake_minimum_required(VERSION 3.15...3.27)
 
-# Scikit-build-core sets these values for you, or you can just hard-code the
-# name and version.
+# Name and version.
 project(
   ${SKBUILD_PROJECT_NAME}
   VERSION ${SKBUILD_PROJECT_VERSION}
   LANGUAGES CXX)
 
-# Find the module development requirements (requires FindPython from 3.17 or
-# scikit-build-core's built-in backport)
+# Find the module development requirements
 find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
 find_package(pybind11 CONFIG REQUIRED)
 find_package(OpenMP REQUIRED)
@@ -28,15 +25,14 @@ set(SOURCES "src/cpp/main.cpp"
             "src/cpp/excursion_set_cholensky.cpp"
             "src/cpp/excursion_set_analytical.cpp"
             "src/cpp/integration_functions.cpp")
-file(GLOB SOURCES_ALG "src/cpp/alglib/*.cpp")
-file(GLOB SOURCES_H "src/cpp/alglib/*.h")
-#python_add_library(_core MODULE src/cpp/main.cpp WITH_SOABI)
-#pybind11_add_module(_core MODULE ${SOURCES})
-python_add_library(_core MODULE ${SOURCES} ${SOURCES_ALG} WITH_SOABI)
+file(GLOB ALGLIB_SOURCES "external/alglib/*.cpp")
+file(GLOB ALGLIB_LIB "external/alglib/*.h")
+
+python_add_library(_core MODULE ${SOURCES} ${ALGLIB_SOURCES} WITH_SOABI)
 target_link_libraries(_core PRIVATE pybind11::headers)
-target_link_libraries(_core PRIVATE ${SOURCES_H})
+target_link_libraries(_core PRIVATE ${ALGLIB_LIB})
 target_include_directories(_core PRIVATE src/cpp/)
-target_include_directories(_core PRIVATE src/cpp/alglib/)
+target_include_directories(_core PRIVATE external/alglib/)
 target_link_libraries(_core PRIVATE OpenMP::OpenMP_CXX)
 #if(CUDA_FOUND)
 #    message("CUDA is available. Version: ${CUDA_VERSION}")
@@ -48,8 +44,7 @@ target_link_libraries(_core PRIVATE OpenMP::OpenMP_CXX)
 #endif()
 
 
-# This is passing in the version as a define just as an example
-
+# Passing in the version
 target_compile_definitions(_core PRIVATE VERSION_INFO=${PROJECT_VERSION})
 
 # The install directory is the output (wheel) directory

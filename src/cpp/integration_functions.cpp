@@ -3,7 +3,11 @@
 #include <vector>
 #include <random>
 #include <map>
-#include <omp.h>
+
+#if defined(_OPENMP)
+    #include <omp.h>
+#endif
+
 #include <math.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
