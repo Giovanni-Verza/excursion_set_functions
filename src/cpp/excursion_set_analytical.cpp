@@ -205,18 +205,3 @@ void init_ex_set_analytical(py::module_ &m) {
 }
 
 
-
-
-/*PYBIND11_MODULE(excursion_set_functions, m) {
-    m.doc() = "pybind11 example plugin"; // optional module docstring
-
-    //m.def("first_crossing_from_multiplicity_func", py::overload_cast<py::array_t<int> > (&first_crossing_from_multiplicity_func));
-
-    m.def("f_double_barrier_lnsigma", &f_double_barrier_lnsigma);
-
-    //m.def("linear_growth_z_array",&linear_growth_z_array,
-    //      py::arg("z_out"), py::arg("OmegaM"), py::arg("OmegaDE"), py::arg("w0"), py::arg("wa"), 
-    //      py::arg("dlna")=0.00001, py::arg("log_a_i")=-14., py::arg("f_i")=1.);
-
-
-}*/
