@@ -13,11 +13,11 @@ Note: on OSX there are some difficulties to use the native clang compiler. Pleas
 `brew install gcc`
 and e.g.
 
-`export CC=/opt/homebrew/bin/gcc-14`
-
-`export CXX=/opt/homebrew/bin/gcc-14`
-
-`pip install .`
+```
+export CC=/opt/homebrew/bin/gcc-14
+export CXX=/opt/homebrew/bin/gcc-14
+pip install . 
+```
 
 where the actual path and version depend on the path and version installed by brew. In most of the cases it would be enough to specify the verions only, e.g. `export CC=gcc-14`. 
 
