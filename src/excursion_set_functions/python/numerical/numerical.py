@@ -12,36 +12,49 @@ float_array2D = types.float64[:,::1]
 int_array = types.int64[::1]
 int_array2D = types.int64[:,::1]
 
-def cholensky_decomposition_matrix_from_Cij(Cij,Cijtype='numpy_narray',out_type='linearized'):
-    if Cijtype == 'numpy_narray':
-        lenR = Cij.shape[0]
-        L_ij = dict()
-        for i in range(0,lenR):
-            L_ij[i] = np.zeros(i+1)
-        for j in range(0,lenR):
-            L_ij[j][j] = (Cij[j,j] - np.sum(L_ij[j][:j] ** 2)) ** 0.5
-            for i in range(j+1, lenR):
-                L_ij[i][j] = (Cij[i,j] - np.sum(L_ij[i][:j] * L_ij[j][:j])) / L_ij[j][j]
-    elif Cijtype == 'dict':
-        L_ij = Dict.empty(types.int64, float_array)
-        for i in Cij.keys():
-            L_ij[i] = np.zeros(i+1)
-        lenR = i + 1
-        for j in range(0,lenR):
-            L_ij[j][j] = (Cij[j][j] - np.sum(L_ij[j][:j] ** 2)) ** 0.5
-            for i in range(j+1, lenR):
-                L_ij[i][j] = (Cij[i][j] - np.sum(L_ij[i][:j] * L_ij[j][:j])) / L_ij[j][j]
-    else:
-        return -1
-    if out_type == 'linearized':
-        L_ij_lin = np.zeros(int((lenR+1)*lenR/2))
-        j0 = 0
-        for i in range(lenR):
-            for j in range(0, i + 1):
-                L_ij_lin[j0 + j] = L_ij[i][j]
-            j0 += i + 1
-        return L_ij_lin
-    return L_ij
+
+
+
+
+@jit(nopython=True)
+def first_crossing_perCore_scalar_barrier_single_numba(F_ij_reshaped, N_paths, N_Rfilt, delta_c):
+    NumCrossing = np.zeros(N_Rfilt, dtype=np.int_)
+    RAND = np.empty(N_Rfilt)
+    progr_ind_out = 0
+    FiltPath = 0.
+    bool_cond = True
+    for nn in range(0,N_paths):
+        progr_ind_out = 0
+        FiltPath = 0.
+        i=0
+        bool_cond = True
+        while bool_cond:
+            RAND[i] = np.random.normal()
+            FiltPath = 0.
+            for s in range(0,i+1):
+                FiltPath += F_ij_reshaped[progr_ind_out + s] * RAND[s]
+            bool_cond = (FiltPath < delta_c)
+            progr_ind_out += i + 1
+            i += 1
+            bool_cond &= (i < N_Rfilt)
+        NumCrossing[i-1] += (FiltPath >= delta_c)
+    return NumCrossing
+
+@jit(nopython=True,parallel=True)
+def first_crossing_scalar_barrier_single_numba(F_ij_reshaped, N_paths, delta_c, nCPU):
+    N_Rfilt = int(round((np.sqrt(8 * len(F_ij_reshaped) + 1) - 1) / 2))
+    Cross_perCore = Dict.empty(types.int64, int_array)
+    for nn in range(0, nCPU):
+        Cross_perCore[nn] = np.zeros(N_Rfilt, dtype=np.int_)
+    for nn in prange(0,nCPU):
+        N_paths_core = int(N_paths / nCPU)
+        N_paths_core += nn < (N_paths % nCPU)
+        Cross_perCore[nn][:] = first_crossing_perCore_scalar_barrier_single_numba(F_ij_reshaped, N_paths_core, N_Rfilt, delta_c)
+
+    NumCrossing = np.zeros(N_Rfilt, dtype=np.int_)
+    for nn in range(0,nCPU):
+        NumCrossing += Cross_perCore[nn]
+    return NumCrossing
 
 
 
@@ -72,8 +85,7 @@ def first_crossing_perCore_array_barrier_single_numba(F_ij_reshaped, N_paths, N_
     return NumCrossing
 
 @jit(nopython=True,parallel=True)
-def first_crossing_array_barrier_single_numba(F_ij_reshaped, N_paths, delta_c):
-    nCPU = get_num_threads()
+def first_crossing_array_barrier_single_numba(F_ij_reshaped, N_paths, delta_c, nCPU):
     N_Rfilt = int(round((np.sqrt(8 * len(F_ij_reshaped) + 1) - 1) / 2))
     Cross_perCore = Dict.empty(types.int64, int_array)
     for nn in range(0, nCPU):
@@ -90,6 +102,12 @@ def first_crossing_array_barrier_single_numba(F_ij_reshaped, N_paths, delta_c):
 
 
 
+def first_crossing_single_barrier(F_ij_reshaped, N_paths, delta_c, nCPU=-1):
+    if (nCPU < 0) | (nCPU > get_num_threads()):
+        nCPU = get_num_threads()
+    if np.isscalar(delta_c):
+        return first_crossing_scalar_barrier_single_numba(F_ij_reshaped, N_paths, delta_c,nCPU)
+    return first_crossing_array_barrier_single_numba(F_ij_reshaped, N_paths, delta_c,nCPU)
 
 
 @jit(nopython=True)
@@ -149,12 +167,12 @@ def first_crossing_profile_perCore_array_barrier_single(
 hist_dict_type = types.DictType(types.int64, int_array2D)
 @jit(nopython=True, parallel=True)
 def first_crossing_profile_array_barrier_single(
-    F_ij_reshaped, N_paths, delta_c,delta_min,delta_max,nbins):
+    F_ij_reshaped, N_paths, delta_c,delta_min,delta_max,nbins,nCPU):
     offset = delta_min
     binsize = (delta_max - delta_min) / nbins
     histo_bins = np.linspace(delta_min,delta_max,nbins+1)
     
-    nCPU = get_num_threads()
+    #nCPU = get_num_threads()
     N_Rfilt = int(round((np.sqrt(8 * len(F_ij_reshaped) + 1) - 1) / 2))
 
     NumCrossing_perCore = Dict.empty(types.int64, int_array)
@@ -189,3 +207,12 @@ def first_crossing_profile_array_barrier_single(
             FiltPath_mean[:,i] /= NumCrossing[i]
     return NumCrossing, FiltPath_mean, histo_bins, hist_dict
 
+
+
+def first_crossing_profile_single_barrier(F_ij_reshaped, N_paths, delta_c,delta_min,delta_max,nbins,nCPU=-1):
+    if (nCPU < 0) | (nCPU > get_num_threads()):
+        nCPU = get_num_threads()
+    if np.isscalar(delta_c):
+        return first_crossing_scalar_barrier_single_numba(
+            F_ij_reshaped, N_paths, np.fill(int(round((np.sqrt(8 * len(F_ij_reshaped) + 1) - 1) / 2)),delta_c),delta_min,delta_max,nbins,nCPU)
+    return first_crossing_profile_array_barrier_single(F_ij_reshaped, N_paths, delta_c,delta_min,delta_max,nbins,nCPU)

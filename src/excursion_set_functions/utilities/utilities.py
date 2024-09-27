@@ -6,6 +6,9 @@ from numba.typed import Dict
 
 
 
+__all__ = ["delta_lin_underdensity", "delta_lin_overdensity", "delta_NL_underdensity", "delta_NL_overdensity", "delta_lin_from_NL", "delta_NL_from_lin",
+           "Lagrangian_tophat_mass_inR", "Lagrangian_tophat_radius_ofM", "derivative_Lagrangian_tophat_mass_inR"]
+
 def delta_lin_underdensity(D_nl):
     Root = lambda x: D_nl - ((9./2.) * ((np.sinh(x) - x) ** 2.)/(np.cosh(x)-1.) ** 3. - 1.)
     eta = optimize.brenth(Root,1e-6,30)

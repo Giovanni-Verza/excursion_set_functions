@@ -1,3 +1,3 @@
-from . import analytical, integration, numerical, spline
+from . import analytical, numerical, integration, spline
 
 __all__ = ["numerical", "integration", "analytical", "spline"]
