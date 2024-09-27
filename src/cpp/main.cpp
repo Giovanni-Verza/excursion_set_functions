@@ -1,5 +1,5 @@
 #include <pybind11/pybind11.h>
-#include <omp.h>
+//#include <omp.h>
 
 #define STRINGIFY(x) #x
 #define MACRO_STRINGIFY(x) STRINGIFY(x)
@@ -36,9 +36,9 @@ PYBIND11_MODULE(_core, m) {
     )pbdoc";
 
 
-    m.def("get_max_threads", &omp_get_max_threads, "Returns max number of threads");
-    m.def("set_num_threads", &omp_set_num_threads, "Set number of threads");
-    m.def("omp_get_num_threads", &omp_get_num_threads, "Get number of threads");
+    //m.def("get_max_threads", &omp_get_max_threads, "Returns max number of threads");
+    //m.def("set_num_threads", &omp_set_num_threads, "Set number of threads");
+    //m.def("omp_get_num_threads", &omp_get_num_threads, "Get number of threads");
 
     auto m_analytical = m.def_submodule("analytical", R"pbdoc(
             Analytical multiplicity functions

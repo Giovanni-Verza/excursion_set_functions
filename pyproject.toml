@@ -1,5 +1,5 @@
 [build-system]
-requires = ["scikit-build-core>=0.3.3", "pybind11","numpy","numba"]
+requires = ["scikit-build-core>=0.3.3", "pybind11"]
 build-backend = "scikit_build_core.build"
 #include-package-data = true
 
@@ -13,6 +13,14 @@ authors = [
   { name = "Giovanni Verza", email = "gverza@flatironinstitute.org" },
 ]
 requires-python = ">=3.7"
+dependencies = [
+    "numpy",
+    "numba>=0.53",
+    "scipy",
+    "pybind11"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
 
 [tool.scikit-build]
 wheel.expand-macos-universal-tags = true
