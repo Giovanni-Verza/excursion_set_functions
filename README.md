@@ -12,8 +12,11 @@ Note: on OSX there are some difficulties to use the native clang compiler. Pleas
 
 `brew install gcc`
 and e.g.
+
 `export CC=/opt/homebrew/bin/gcc-14`
+
 `export CXX=/opt/homebrew/bin/gcc-14`
+
 `pip install .`
 
 where the actual path and version depend on the path and version installed by brew. In most of the cases it would be enough to specify the verions only, e.g. `export CC=gcc-14`. 
@@ -47,7 +50,7 @@ The module is composed by 4 c++ modules:
 - `integration` contains function to compute various integration of the powerspectrum
 - `spiline` contains spline functions.
 
-Beyound these 4 modules there are the `utitlities` and `python` submodules. The `utitlities` submodule contains some usefull function, not strictly related to the excursion set. The `python` submodule contains the name main 4 modules, but written in pure python, in these way the function can be esier modified. In general the c++ modules performance is always better the the pure python ones. This is always true on Linux systems, however we noted that on OSX the numba-python version of the `numerical` module may be slightly more performant.
+Beyound these 4 modules there are the `utitlities` and `python` submodules. The `utitlities` submodule contains some useful functions, not strictly related to the excursion set. The `python` submodule contains the same main 4 c++ modules, but written in pure python and, whenever possible, accelerated with `numba`. In general the c++ modules performance is always better the the pure python ones. This is always true on Linux systems, however we noted that on OSX the numba-python version of the `numerical` module may be slightly more performant.
 
 
 [pybind11]: https://pybind11.readthedocs.io
