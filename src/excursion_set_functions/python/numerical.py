@@ -7,6 +7,8 @@ except:
 from numba.core import types
 from numba.typed import Dict
 
+__all__ = ["first_crossing_single_barrier", "first_crossing_profile_single_barrier", "first_crossing_profile_single_barrier"]
+
 float_array = types.float64[::1]
 float_array2D = types.float64[:,::1]
 int_array = types.int64[::1]

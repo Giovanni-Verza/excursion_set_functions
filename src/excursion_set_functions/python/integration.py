@@ -297,19 +297,6 @@ def C_ij_TopHat(Pk, k, R, n=0.96, OmaxSmallK=-1):
         #print(i,' id:',IDchange,'t1:',C_ii_TopHat_MAIN_lowR(Pk, k, R[i], IDchange, OmaxSmallK, n),'t2:',C_ii_TopHat_MAIN(Coeffs[IDchange:,:], k[IDchange:], R[i]),'tot,',Cij_out[i,i])
 
         
-    #ij_val = []
-    #for i in range(len(R)):
-    #    for j in range(i):
-    #        ij_val.append((i,j))
-
-    #pool = ThreadPool()
-    #for i,j in ij_val:
-    #    pool.apply_async(C_ij_apply_async, args=(i,j,Cij_out,R,k,Pk,Coeffs,OmaxSmallK, n))
-    # close the thread pool
-    #pool.close()
-    # wait for all tasks to finish
-    #pool.join()
-    
     return Cij_out
     
 
@@ -325,6 +312,7 @@ def sigma2_TopHat(
         OUT[i] = C_ii_TopHat_MAIN_lowR(Pk, k, R[i], IDchange, OmaxSmallK, n)
         OUT[i] += C_ii_TopHat_MAIN(Coeffs[IDchange:,:], k[IDchange:], R[i])
     return OUT
+
 
 def sigma2_2_TopHat_numdiff(
         Pk, k, R, n=0.96,OmaxSmallK=-1,dRperc=5e-3):

@@ -50,7 +50,7 @@ The module is composed by 4 c++ modules:
 - `integration` contains function to compute various integration of the powerspectrum
 - `spiline` contains spline functions.
 
-Beyound these 4 modules there are the `utitlities` and `python` submodules. The `utitlities` submodule contains some useful functions, not strictly related to the excursion set. The `python` submodule contains the same main 4 c++ modules, but written in pure python and, whenever possible, accelerated with `numba`. In general the c++ modules performance is always better the the pure python ones. This is always true on Linux systems, however we noted that on OSX the numba-python version of the `numerical` module may be slightly more performant.
+Beyound these 4 modules there are the `utilities` and `python` submodules. The `utitlities` submodule contains some useful functions, not strictly related to the excursion set. The `python` submodule contains the same main 4 c++ modules, but written in pure python and, whenever possible, accelerated with `numba`. In general the c++ modules performance is always better than the pure python ones. This is always true on Linux systems, however we noted that on OSX the numba-python version of the `numerical` module may be slightly more performant.
 
 
 [pybind11]: https://pybind11.readthedocs.io
