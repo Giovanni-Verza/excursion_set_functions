@@ -24,7 +24,7 @@ def delta_lin_overdensity(D_nl):
     return DELTA_lin
 
 def delta_lin_from_NL(D_nl):
-    if np.iscalar(D_nl):
+    if np.isscalar(D_nl):
         if D_nl < 0.:
             return delta_lin_overdensity(D_nl)
         elif D_nl > 0.:
@@ -54,7 +54,7 @@ def delta_NL_overdensity(DELTA_lin):
     return D_nl
 
 def delta_NL_from_lin(DELTA_lin):
-    if np.iscalar(DELTA_lin):
+    if np.isscalar(DELTA_lin):
         if DELTA_lin < 0.:
             return delta_NL_underdensity(DELTA_lin)
         elif DELTA_lin[i] > 0.:
@@ -66,27 +66,6 @@ def delta_NL_from_lin(DELTA_lin):
         elif DELTA_lin[i] > 0.:
             OUT[i] = delta_NL_overdensity(DELTA_lin[i])
     return OUT
-
-
-
-@jit(nopython=True)
-def find_CL_brutal_force(sample,range_array):
-    xarr = np.sort(sample)
-    len_arr = len(xarr)
-    CL_out = np.zeros((len(range_array),2))
-    for ii in range(len(range_array)):
-        len_int = int(round(len_arr * range_array[ii]))
-        ind_out = 0
-        delta = xarr[-1] - xarr[0]
-        saveind = False
-        for j in range(0,len_arr-len_int):
-            delta_tmp = xarr[j+len_int] - xarr[j]
-            saveind = delta_tmp < delta
-            ind_out = j * int(saveind) + ind_out * int(~saveind)
-            delta = min(delta,delta_tmp)
-        CL_out[ii,0] = xarr[ind_out]
-        CL_out[ii,1] = xarr[ind_out + len_int]
-    return CL_out
 
 
 #@jit(nopython=True)
