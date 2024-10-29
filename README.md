@@ -15,7 +15,7 @@ and e.g.
 
 ```
 export CC=/opt/homebrew/bin/gcc-14
-export CXX=/opt/homebrew/bin/gcc-14
+export CXX=/opt/homebrew/bin/g++-14
 pip install . 
 ```
 
