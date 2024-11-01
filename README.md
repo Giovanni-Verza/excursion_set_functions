@@ -48,9 +48,9 @@ The module is composed by 4 c++ modules:
 - `analytical` contains analytical multiplicity functions
 - `numerical` contains functions that compute numerical multiplicity functions via Monte Carlo techniques
 - `integration` contains function to compute various integration of the power spectrum
-- `spiline` contains spline functions.
+- `spline` contains spline functions.
 
-Beyond these 4 modules there are the `utilities` and `python` submodules. The `utitlities` submodule contains some useful functions, not strictly related to the excursion set. The `python` submodule contains the same main 4 c++ modules, but written in pure python and, whenever possible, accelerated with `numba`. In general the c++ modules performance is always better than the pure python ones. This is always true on Linux systems, however we noted that on OSX the numba-python version of the `numerical` module may be slightly more performant.
+Beyond these 4 modules there are the `utilities` and `python` submodules. The `utilities` submodule contains some useful functions, not strictly related to the excursion set. The `python` submodule contains the same main 4 c++ modules, but written in pure python and, whenever possible, accelerated with `numba`. In general the c++ modules performance is always better than the pure python ones. This is always true on Linux systems, however we noted that on OSX the numba-python version of the `numerical` module may be slightly more performant.
 
 
 
