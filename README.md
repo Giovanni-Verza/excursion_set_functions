@@ -53,6 +53,12 @@ The module is composed by 4 c++ modules:
 Beyond these 4 modules there are the `utilities` and `python` submodules. The `utitlities` submodule contains some useful functions, not strictly related to the excursion set. The `python` submodule contains the same main 4 c++ modules, but written in pure python and, whenever possible, accelerated with `numba`. In general the c++ modules performance is always better than the pure python ones. This is always true on Linux systems, however we noted that on OSX the numba-python version of the `numerical` module may be slightly more performant.
 
 
+
+## Acknowledgments
+
+I am grateful to Leander Thiele, Simone Sartori, Alice Pisani, and Carmelita Carbone for testing the repository
+
+
 [pybind11]: https://pybind11.readthedocs.io
 [scikit-build-core]: https://scikit-build-core.readthedocs.io
 [ALGLIB]: https://www.alglib.net/
