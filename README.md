@@ -56,7 +56,7 @@ Beyond these 4 modules there are the `utilities` and `python` submodules. The `u
 
 ## Acknowledgments
 
-I am grateful to Leander Thiele, Simone Sartori, Alice Pisani, and Carmelita Carbone for testing the repository
+I am grateful to Leander Thiele, Simone Sartori, Alice Pisani, and Carmelita Carbone for testing the repository.
 
 
 [pybind11]: https://pybind11.readthedocs.io
