@@ -4,8 +4,6 @@ from numba.core import types
 from numba.typed import Dict
 #from numba.extending import overload
 
-
-
 @jit(nopython=True)
 def Solve_tridiagonal_system(a,b,c,d,w,g,p):
     #a = Lower Diag, b = Main Diag, c = Upper Diag, d = solution vector
@@ -394,3 +392,51 @@ def get_integrals(integrals_out,estrema_array,Coeffs,x_input_arr):
         i_out -= 1
 
 
+@jit(nopython=True)
+def get_integral_scalar_array(x1, x_eval, x, coeffs):
+    len_out = x_eval.shape[0]
+    y_out = np.empty(len_out)
+
+    #double integr_offset,integr_incremental, delta_x, t
+    i_out = 0
+    len_x_mn2 = x.shape[0] - 2
+
+    integr_offset = 0.
+    while ((x1 >= x[i_out+1]) & (i_out < len_x_mn2)):
+        delta_x = x[i_out+1] - x[i_out]
+        integr_offset += (coeffs[i_out][0] + coeffs[i_out][1] / 2. +
+                          coeffs[i_out][2] / 3. + coeffs[i_out][3] / 4.) * delta_x
+        i_out += 1
+    
+    delta_x = x[i_out+1] - x[i_out]
+    t = (x1 - x[i_out]) / delta_x
+    
+    integr_offset += (coeffs[i_out,0] * t + 
+                      coeffs[i_out,1] * t * t / 2. + 
+                      coeffs[i_out,2] * t * t * t / 3. + 
+                      coeffs[i_out,3] * t * t * t * t / 4.) * delta_x
+
+    i_out = 0
+    integr_incremental = 0
+    while ((x1 >= x[i_out+1]) & (i_out < len_x_mn2)):
+        delta_x = x[i_out+1] - x[i_out]
+        integr_incremental += (coeffs[i_out][0] + coeffs[i_out][1] / 2. +
+                               coeffs[i_out][2] / 3. + coeffs[i_out][3] / 4.) * delta_x
+        i_out += 1
+    
+    sort_ind = np.argsort(x_eval)
+
+    for i in sort_ind:
+        while ((x_eval[i] >= x[i_out+1]) & (i_out < len_x_mn2)):
+            integr_incremental += (coeffs[i_out][0] + coeffs[i_out][1] / 2. +
+                                   coeffs[i_out][2] / 3. + coeffs[i_out][3] / 4.) * delta_x
+            i_out += 1
+            delta_x = x[i_out+1] - x[i_out]
+        
+        
+        t = (x_eval[i] - x[i_out]) / delta_x
+        y_out[i] =  integr_incremental + (coeffs[i_out][0] * t + 
+                                          coeffs[i_out][1] * t * t / 2. + 
+                                          coeffs[i_out][2] * t * t * t / 3. + 
+                                          coeffs[i_out][3] * t * t * t * t / 4.) * delta_x - integr_offset
+    return y_out

@@ -4,7 +4,7 @@
 #include <random>
 #include <map>
 //#include <bits/stdc++.h>
-//#include <omp.h>
+#include <omp.h>
 #include <math.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -127,7 +127,6 @@ vector<int> argsort(const vector<T>& v) {
 
 
 
-
 /*void permute(T A[], size_t perm_indexes[], int n) {
 
     for (int i = 0; i < n; i++) {
@@ -221,6 +220,28 @@ class cubic_spline{
         }
 
 
+        double get_values(double x_eval) {
+            double y_out, delta_x, t;
+            int i_out=0;
+            int len_x_mn2 = len_x - 2;
+
+            //i_out = 0;
+            while ((x_eval >= x[i_out+1]  && (i_out < len_x_mn2))) {
+                i_out += 1;
+            }
+            
+            delta_x = x[i_out+1] - x[i_out];
+            t = (x_eval - x[i_out]) / delta_x;
+            y_out = coeffs[i_out][0] + 
+                        coeffs[i_out][1] * t + 
+                        coeffs[i_out][2] * t * t + 
+                        coeffs[i_out][3] * t * t * t;
+                            
+            
+
+            return y_out;
+        } 
+
         py::array_t<double> get_values_sorted(vector<double> x_eval) {
             int len_out = x_eval.size();
             py::array_t<double> np_arr = py::array_t<double>(len_out);
@@ -250,8 +271,7 @@ class cubic_spline{
         } 
 
 
-
-        py::array_t<double> get_values(vector<double> x_eval) {
+        py::array_t<double> get_values_unsorted(vector<double> x_eval) {
             int len_out = x_eval.size();
             py::array_t<double> np_arr = py::array_t<double>(len_out);
             py::buffer_info buf_np_arr = np_arr.request();
@@ -282,7 +302,53 @@ class cubic_spline{
             return np_arr;
         } 
 
-        
+
+        void get_values_chunk(const vector<double>& x_eval, double* y_out_chunk) {
+            int i_out = 0;
+            int len_x_mn2 = len_x - 2;
+            vector<int> sort_ind = argsort(x_eval);
+
+            for (int i : sort_ind) {
+                while ((x_eval[i] >= x[i_out + 1]) && (i_out < len_x_mn2)) {
+                    i_out += 1;
+                }
+
+                double delta_x = x[i_out + 1] - x[i_out];
+                double t = (x_eval[i] - x[i_out]) / delta_x;
+
+                y_out_chunk[i] = coeffs[i_out][0] +
+                                coeffs[i_out][1] * t +
+                                coeffs[i_out][2] * t * t +
+                                coeffs[i_out][3] * t * t * t;
+            }
+        }
+
+
+        py::array_t<double> get_values(vector<double> x_eval, int chunk_size, int nCPU) {
+            int len_out = x_eval.size();
+            py::array_t<double> np_arr = py::array_t<double>(len_out);
+            py::buffer_info buf_np_arr = np_arr.request();
+            double* y_out = static_cast<double*>(buf_np_arr.ptr);
+
+
+            #if defined(_OPENMP)
+                if ((nCPU < 1) || (nCPU > omp_get_max_threads())) {
+                    nCPU = omp_get_max_threads();
+                }
+            #else
+                nCPU = 1;
+            #endif
+
+            #pragma omp parallel for num_threads( nCPU )
+            for (int i = 0; i < len_out; i += chunk_size) {
+                int current_chunk_size = min(chunk_size, len_out - i);
+                vector<double> chunk_x_eval(x_eval.begin() + i, x_eval.begin() + i + current_chunk_size);
+                get_values_chunk(chunk_x_eval, y_out + i);
+            }
+
+            return np_arr;
+        }
+
 
         py::array_t<double> get_integral(vector<double> x_eval) {
             int len_out = x_eval.size()-1;
@@ -418,7 +484,7 @@ class cubic_spline{
         }    
 
 
-        py::array_t<double> get_integral(double x1, vector<double> x_eval) {
+        py::array_t<double> get_integral_unsorted(double x1, vector<double> x_eval) {
             int len_out = x_eval.size();
             py::array_t<double> np_arr = py::array_t<double>(len_out);
             py::buffer_info buf_np_arr = np_arr.request();
@@ -484,6 +550,97 @@ class cubic_spline{
         }  
 
 
+
+        void get_integral_chunk(double x1, double integr_offset, const vector<double>& x_eval, double* y_out_chunk) {
+            int i_out = 0;
+            double integr_incremental, delta_x, t;
+            int len_x_mn2 = len_x - 2;
+
+            i_out = 0;
+            integr_incremental = 0;
+            while ((x1 >= x[i_out+1]) && (i_out < len_x_mn2)) {
+                delta_x = x[i_out+1] - x[i_out];
+                integr_incremental += (coeffs[i_out][0] + coeffs[i_out][1] / 2. +
+                               coeffs[i_out][2] / 3. + coeffs[i_out][3] / 4.) * delta_x;
+                i_out += 1;
+            }
+            //delta_x = x[i_out+1] - x[i_out];
+            //t = (x_eval[0] - x[i_out]) / delta_x;
+
+            vector<int> sort_ind = argsort(x_eval);
+
+            //i_out = 0;
+            //for (int i=0; i<len_out; i++) {
+            for(int i : sort_ind)  {
+            //for (int i=0; i<len_out; i++) {
+                //y_out[i] = -(coeffs[i_out][0] * t +
+                //             coeffs[i_out][1] * t * t / 2. +
+                //             coeffs[i_out][2] * t * t * t / 3. +
+                //             coeffs[i_out][3] * t * t * t * t / 4.) * delta_x;
+                while ((x_eval[i] >= x[i_out+1]) && (i_out < len_x_mn2)) {
+                    integr_incremental += (coeffs[i_out][0] + coeffs[i_out][1] / 2. +
+                                 coeffs[i_out][2] / 3. + coeffs[i_out][3] / 4.) * delta_x;
+                    i_out += 1;
+                    delta_x = x[i_out+1] - x[i_out];
+                }
+                
+                t = (x_eval[i] - x[i_out]) / delta_x;
+                y_out_chunk[i] =  integr_incremental + 
+                            (coeffs[i_out][0] * t + 
+                             coeffs[i_out][1] * t * t / 2. + 
+                             coeffs[i_out][2] * t * t * t / 3. + 
+                             coeffs[i_out][3] * t * t * t * t / 4.) * delta_x - integr_offset;
+            }
+
+        }
+
+
+
+
+        py::array_t<double> get_integral(double x1, vector<double> x_eval, int chunk_size, int nCPU) {
+            int len_out = x_eval.size();
+            py::array_t<double> np_arr = py::array_t<double>(len_out);
+            py::buffer_info buf_np_arr = np_arr.request();
+            double* y_out = static_cast<double*>(buf_np_arr.ptr);
+
+
+            double integr_offset,integr_incremental, delta_x, t;
+            int i_out = 0;
+            int len_x_mn2 = len_x - 2;
+
+            integr_offset = 0;
+            while ((x1 >= x[i_out+1]) && (i_out < len_x_mn2)) {
+                delta_x = x[i_out+1] - x[i_out];
+                integr_offset += (coeffs[i_out][0] + coeffs[i_out][1] / 2. +
+                               coeffs[i_out][2] / 3. + coeffs[i_out][3] / 4.) * delta_x;
+                i_out += 1;
+            }
+            delta_x = x[i_out+1] - x[i_out];
+            t = (x1 - x[i_out]) / delta_x;
+            
+            integr_offset += (coeffs[i_out][0] * t + 
+                          coeffs[i_out][1] * t * t / 2. + 
+                          coeffs[i_out][2] * t * t * t / 3. + 
+                          coeffs[i_out][3] * t * t * t * t / 4.) * delta_x;
+
+            #if defined(_OPENMP)
+                if ((nCPU < 1) || (nCPU > omp_get_max_threads())) {
+                    nCPU = omp_get_max_threads();
+                }
+            #else
+                nCPU = 1;
+            #endif
+
+            #pragma omp parallel for num_threads( nCPU )
+            for (int i = 0; i < len_out; i += chunk_size) {
+                int current_chunk_size = min(chunk_size, len_out - i);
+                vector<double> chunk_x_eval(x_eval.begin() + i, x_eval.begin() + i + current_chunk_size);
+                get_integral_chunk(x1, integr_offset, chunk_x_eval, y_out + i);
+            }
+
+            return np_arr;
+        }
+
         
         py::array_t<double> get_derivative_sorted(vector<double> x_eval) {
             int len_out = x_eval.size();
@@ -548,11 +705,17 @@ class cubic_spline{
 void init_spline(py::module_ &m) {
     py::class_<cubic_spline>(m, "cubic_spline")
         .def(py::init<vector<double>, vector<double> >())
-        .def("get_values", &cubic_spline::get_values)
+        .def("get_values_unsorted", &cubic_spline::get_values_unsorted)
+        .def("get_values", py::overload_cast<double>(&cubic_spline::get_values))
+        .def("get_values", py::overload_cast<vector<double>, int, int>(&cubic_spline::get_values), 
+             py::arg("x_eval"), py::arg("chunk_size")=1000, py::arg("nCPU")=1)
         .def("get_values_sorted", &cubic_spline::get_values_sorted)
         .def("get_integral", py::overload_cast<double, double>(&cubic_spline::get_integral))
         .def("get_integral", py::overload_cast<vector<double>>(&cubic_spline::get_integral))
-        .def("get_integral", py::overload_cast<double, vector<double>>(&cubic_spline::get_integral))
+        .def("get_integral", py::overload_cast<double, vector<double>, int, int>(&cubic_spline::get_integral), 
+             py::arg("x1"), py::arg("x_eval"), py::arg("chunk_size")=1000, py::arg("nCPU")=1)
+        .def("get_integral_unsorted", &cubic_spline::get_integral_unsorted)
+             //py::arg("x1"), py::arg("x_eval"), py::arg("CHUNCKSIZE")=100)
         .def("get_integral_sorted", &cubic_spline::get_integral_sorted)
         .def("get_derivative", &cubic_spline::get_derivative)
         .def("get_derivative_sorted", &cubic_spline::get_derivative_sorted);
